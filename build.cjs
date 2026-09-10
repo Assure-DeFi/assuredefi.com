@@ -434,10 +434,18 @@ function rowValues(r) {
 const logoB64 = fs.readFileSync(path.join(IN, 'brand', 'Assure-brand.webp')).toString('base64');
 const LOGO_URI = `data:image/webp;base64,${logoB64}`;
 
+// ------------------------------------------------- per-project detail pages
+//
+// One static page per verification under site/projects/. Built before the
+// landing page, because the landing table links a project row to its page only
+// where a page actually exists — never to a guessed path.
+const { buildDetailPages } = require('./tools/detail-pages.cjs');
+const detailBuild = buildDetailPages({ outDir: OUT, logoDataUri: LOGO_URI });
+
 // Compact payload: a header list plus array rows, so 985 objects do not repeat
-// 14 key names each. Link lists are arrays of URLs (usually empty).
+// 15 key names each. Link lists are arrays of URLs (usually empty).
 const PAYLOAD_COLS = [
-  'n', 's', 'ch', 'ca', 'ks', 'kd', 'as', 'ad', 'sc', 'tr', 'rn', 'kc', 'ar', 'ac',
+  'n', 's', 'ch', 'ca', 'ks', 'kd', 'as', 'ad', 'sc', 'tr', 'rn', 'kc', 'ar', 'ac', 'pg',
 ];
 const payload = {
   cols: PAYLOAD_COLS,
@@ -445,8 +453,21 @@ const payload = {
     r.name, r.slug, r.chains, r.contracts, r.kycStatus, r.kycDate,
     r.auditStatus, r.auditDate, r.auditScore, r.tier, r.renounced ? 1 : 0,
     r.kycCerts, r.auditReports, r.auditCerts,
+    pageHref(r.slug),
   ]),
 };
+
+/** The landing dataset's slug, resolved through the archive's alias map. */
+function pageHref(slug) {
+  if (detailBuild.index.has(slug)) return detailBuild.index.get(slug);
+  const aliased = detailBuild.aliases[slug];
+  return aliased ? detailBuild.index.get(aliased) : '';
+}
+
+// Rows whose slug has no archive page. Reported, never papered over: the two
+// datasets behind this build (the landing dataset and the live API sweep) do
+// not carry an identical slug set.
+const rowsWithoutPage = rows.filter((r) => !pageHref(r.slug)).map((r) => r.slug);
 
 const chainList = [...new Set(rows.flatMap((r) => r.chains))].sort();
 
@@ -566,6 +587,9 @@ tbody td{padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.045); vert
 tbody tr:hover{background:rgba(226,210,67,.035)}
 tbody tr.hl{background:rgba(226,210,67,.13); outline:1px solid var(--line)}
 .nm{font-weight:600; color:var(--light)}
+a.nm{color:var(--light); text-decoration:underline; text-decoration-color:var(--line);
+  text-underline-offset:3px}
+a.nm:hover{color:var(--gold-bright); text-decoration-color:currentColor}
 .sl{display:block; font-size:11.5px; color:var(--muted-2); font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px; color:var(--muted); white-space:nowrap}
 tbody td:nth-child(5){white-space:nowrap}
@@ -640,7 +664,7 @@ footer{
 
 <section>
   <h2>KYC verifications</h2>
-  <p class="lede">Search by project name, slug or contract address. A dash means no document of that kind was matched to that project. Nothing here is inferred: a link appears only where a file in the public repositories is confidently the one for that record.</p>
+  <p class="lede">Search by project name, slug or contract address. Open a project name for its full verification record &mdash; the team members who were verified, what each had control over, their country tier and verified contacts, the contract, and every audit report. A dash means no document of that kind was matched to that project. Nothing here is inferred: a link appears only where a file in the public repositories is confidently the one for that record.</p>
   <p class="lede">The source dataset carried no ticker, website or social fields for any record, so those columns are not shown.</p>
 
   <div class="controls">
@@ -753,8 +777,13 @@ function rowHtml(i){
     ? r[C.ca].map(function(a){ return '<span class="mono" title="'+esc(a)+'">'+esc(shorten(a))+"</span>"; }).join("<br>")
     : '<span class="dash">&mdash;</span>';
   var score = r[C.sc]==null ? "" : '<span class="dt">score '+r[C.sc]+"</span>";
+  // The project cell links to its archive page. A row with no page (the two
+  // source datasets do not carry identical slug sets) renders plain text.
+  var nm = r[C.pg]
+    ? '<a class="nm" href="'+esc(r[C.pg])+'">'+esc(r[C.n])+"</a>"
+    : '<span class="nm">'+esc(r[C.n])+"</span>";
   return '<tr id="r-'+esc(r[C.s])+'">'
-    + '<td><span class="nm">'+esc(r[C.n])+'</span><span class="sl">'+esc(r[C.s])+"</span></td>"
+    + "<td>"+nm+'<span class="sl">'+esc(r[C.s])+"</span></td>"
     + "<td>"+chains+"</td>"
     + "<td>"+pill(r[C.ks])+(r[C.kd]?'<span class="dt">'+esc(r[C.kd])+"</span>":"")+"</td>"
     + "<td>"+pill(r[C.as])+(r[C.ad]?'<span class="dt">'+esc(r[C.ad])+"</span>":"")+score+"</td>"
@@ -872,8 +901,23 @@ p{max-width:46ch;color:rgba(242,242,242,.62)}
 </style>
 <script>
 (function(){
-  var m = /\\/projects?\\/([^\\/?#]+)/.exec(location.pathname);
-  var to = m ? "/#p=" + m[1] : "/";
+  // Old projects-site paths: /project/<slug> and /projects/<slug>. Both go to
+  // the archive page for that slug when one exists, and otherwise to the
+  // slug's row on the landing table. The slug list is generated, so a path
+  // that never had a page can never be redirected to a 404.
+  var PAGES = ${JSON.stringify([...detailBuild.index.keys()])};
+  // A few old seoSlug values are not usable as a path segment (a trailing
+  // space, an uppercase form, an ampersand), so their page lives at a
+  // sanitised slug and the original maps to it here.
+  var ALIAS = ${JSON.stringify(detailBuild.aliases)};
+  var HAS = {}; for (var i = 0; i < PAGES.length; i++) HAS[PAGES[i]] = 1;
+  var m = /\\/projects?\\/([^\\/?#]+)\\/?$/.exec(location.pathname);
+  var to = "/";
+  if (m) {
+    var raw = decodeURIComponent(m[1]);
+    var slug = HAS[raw] ? raw : (ALIAS[raw] || null);
+    to = slug ? "/projects/" + encodeURIComponent(slug) + "/" : "/#p=" + m[1];
+  }
   location.replace(to);
 })();
 </script>
@@ -901,6 +945,18 @@ fs.writeFileSync(
   path.join(ROOT, '.xlsx-input.json'),
   JSON.stringify({ columns: CSV_COLUMNS, rows: rows.map(rowValues) })
 );
+// Raw API payloads travel with the site, so a field a template misses is still
+// recoverable from the archive itself rather than only from this scratch build.
+const SWEEP_DIR = path.resolve(ROOT, '..', 'projects-sweep');
+fs.mkdirSync(path.join(OUT, 'data'), { recursive: true });
+for (const f of ['api-list-all.json', 'api-detail-all.json']) {
+  fs.copyFileSync(path.join(SWEEP_DIR, f), path.join(OUT, 'data', f));
+}
+fs.copyFileSync(path.join(ROOT, 'assets-manifest.json'), path.join(OUT, 'data', 'assets-manifest.json'));
+
+stats.detailPages = detailBuild.stats;
+stats.detailListOnlyPages = detailBuild.listOnlyPages;
+stats.landingRowsWithoutArchivePage = rowsWithoutPage;
 fs.writeFileSync(path.join(ROOT, '.stats.json'), JSON.stringify(stats, null, 2));
 fs.writeFileSync(path.join(ROOT, '.suffix-matches.json'), JSON.stringify(suffixMatches, null, 2));
 
@@ -926,4 +982,8 @@ console.log(`cert files ${stats.certFilesMatched}/${stats.certFiles} matched -> 
 console.log(`approved KYC with no certificate   ${stats.approvedKycNoCert.length}/${stats.approvedKycTotal}`);
 console.log(`completed audit with no report     ${stats.completedAuditNoReport.length}/${stats.completedAuditTotal}`);
 console.log(`index.html           ${bytes} bytes (${(bytes / 1024).toFixed(1)} KB)`);
+console.log(`detail pages         ${detailBuild.stats.pagesBuilt} (${detailBuild.stats.slugs} slugs, ${detailBuild.stats.listOnlyPages} from list data only)`);
+console.log(`members rendered     ${detailBuild.stats.membersRendered}`);
+console.log(`audit reports        ${detailBuild.stats.reportsRendered}`);
+console.log(`landing rows w/o page ${rowsWithoutPage.length}`);
 console.log(xlsxNote);

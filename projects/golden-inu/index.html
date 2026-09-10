@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Golden Inu &mdash; Assure DeFi Verification Archive</title>
+<meta name="description" content="Golden Inu verification record from the permanent Assure DeFi archive.">
+<meta name="robots" content="index,follow">
+<style>
+:root{
+  --bg1:#090822; --bg2:#04030e; --bg3:#050411; --card:#12122b;
+  --gold:#E2D243; --gold-bright:#ffe627; --gold-dark:#968929; --gold-mid:#d1b933;
+  --light:#F2F2F2; --line:rgba(226,210,67,.16); --line-soft:rgba(255,255,255,.08);
+  --muted:rgba(242,242,242,.62); --muted-2:rgba(242,242,242,.42);
+  --red:#ff9b9b; --green:#9ede6a;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg2); color:var(--light);
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15px; line-height:1.55; overflow-x:hidden;
+}
+.wrap{max-width:920px; margin:0 auto; padding-inline:20px}
+a{color:var(--gold-mid); text-decoration:none}
+a:hover{color:var(--gold-bright); text-decoration:underline}
+header{background:linear-gradient(to bottom,var(--bg1),var(--bg2)); border-bottom:1px solid var(--line)}
+.hd{padding-block:30px 34px}
+.back{font-size:13.5px; display:inline-block; margin-bottom:16px}
+h1{margin:0 0 10px; font-size:clamp(24px,5vw,40px); line-height:1.15; font-weight:800; letter-spacing:-.02em; overflow-wrap:anywhere}
+h1 .g{background:linear-gradient(to right,var(--gold-dark),var(--gold-bright));
+  -webkit-background-clip:text; background-clip:text; color:transparent}
+.stamp{display:inline-flex; align-items:center; gap:9px; border:1px solid var(--line);
+  border-radius:999px; padding:6px 14px; font-size:12px; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--gold); background:rgba(226,210,67,.05); margin-right:8px}
+.stamp.warn{color:var(--red); border-color:rgba(255,120,120,.3); background:rgba(255,120,120,.07)}
+.stamp.ok{color:var(--green); border-color:rgba(158,222,106,.28); background:rgba(158,222,106,.06)}
+main{padding-block:26px 10px}
+.card{background:var(--card); border:1px solid var(--line-soft); border-radius:14px;
+  padding:20px; margin-bottom:16px}
+.card > h2{margin:0 0 14px; font-size:16px; font-weight:700; letter-spacing:-.01em;
+  padding-bottom:10px; border-bottom:1px solid var(--line-soft)}
+.ident{display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+.ident img{width:56px; height:56px; border-radius:50%; object-fit:cover;
+  border:2px solid var(--line); background:#0a0923; flex:0 0 auto}
+.ident-noimg{width:56px; height:56px; border-radius:50%; border:2px solid var(--line-soft);
+  background:rgba(255,255,255,.03); flex:0 0 auto}
+.ident .nm{font-size:20px; font-weight:700; margin:0; overflow-wrap:anywhere}
+.ident .tk{margin:0; font-size:12.5px; color:var(--muted-2);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.desc{margin:14px 0 0; color:var(--muted); font-size:14px; overflow-wrap:anywhere}
+.socs, .socrow{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px}
+.soc{border:1px solid var(--line-soft); border-radius:8px; padding:5px 11px; font-size:13px;
+  color:var(--gold-mid); background:rgba(255,255,255,.02)}
+.soc:hover{border-color:var(--line); text-decoration:none}
+.dates{display:flex; flex-wrap:wrap; gap:22px}
+.dates div{min-width:130px}
+.dates .l{margin:0; font-size:12px; color:var(--muted-2); text-transform:uppercase; letter-spacing:.07em}
+.dates .v{margin:3px 0 0; font-size:16px; font-weight:600; color:var(--gold)}
+.notice{border:1px solid rgba(255,120,120,.24); background:rgba(255,120,120,.06);
+  border-radius:11px; padding:16px}
+.notice p{margin:0 0 8px} .notice p:last-child{margin-bottom:0}
+.notice .t{font-weight:700; color:var(--red)}
+.addr{margin-bottom:12px}
+.alabel{margin:0 0 5px; font-size:13px; color:var(--muted)}
+.avalue{margin:0; background:rgba(255,255,255,.04); border:1px solid var(--line-soft);
+  border-radius:9px; padding:9px 11px; display:flex; gap:10px; align-items:center;
+  flex-wrap:wrap; justify-content:space-between}
+.avalue code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px;
+  color:var(--gold-mid); overflow-wrap:anywhere; min-width:0; flex:1 1 180px}
+.avalue.na{color:var(--muted-2); display:block}
+.renounced{color:var(--gold); font-weight:600}
+.copy{background:transparent; border:1px solid var(--line); color:var(--gold);
+  border-radius:7px; padding:4px 10px; font:inherit; font-size:12px; cursor:pointer; flex:0 0 auto}
+.copy:hover{background:rgba(226,210,67,.08)}
+.chips{display:flex; flex-wrap:wrap; gap:6px}
+.chip{display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px;
+  background:rgba(226,210,67,.1); color:var(--gold); border:1px solid var(--line)}
+.member{border:1px solid var(--line-soft); border-radius:11px; padding:15px; margin-bottom:12px;
+  background:rgba(255,255,255,.015)}
+.member:last-child{margin-bottom:0}
+.mhead{display:flex; gap:10px; align-items:baseline; flex-wrap:wrap;
+  padding-bottom:10px; margin-bottom:10px; border-bottom:1px solid var(--line-soft)}
+.mname{margin:0; font-size:17px; font-weight:700; color:var(--gold); overflow-wrap:anywhere}
+.mrole{font-size:12.5px; color:var(--muted); border:1px solid var(--line-soft);
+  border-radius:999px; padding:2px 10px}
+.mfacts{display:grid; grid-template-columns:auto 1fr; gap:8px 16px; margin:0; font-size:13.5px}
+.mfacts dt{color:var(--muted-2); white-space:nowrap}
+.mfacts dd{margin:0; overflow-wrap:anywhere}
+.tier{font-weight:700}
+.handle{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px;
+  color:var(--muted); margin-right:10px; overflow-wrap:anywhere}
+.tiers{margin-top:14px; border:1px solid var(--line-soft); border-radius:10px; padding:10px 13px;
+  font-size:13px; color:var(--muted)}
+.tiers summary{cursor:pointer; color:var(--gold-mid); font-size:13px}
+.tiers p{margin:9px 0 0}
+.tiers strong{color:var(--gold)}
+.report{border:1px solid var(--line-soft); border-radius:11px; padding:15px; margin-bottom:12px;
+  background:rgba(255,255,255,.015)}
+.report:last-child{margin-bottom:0}
+.rhead{display:flex; gap:10px; justify-content:space-between; flex-wrap:wrap;
+  padding-bottom:10px; margin-bottom:12px; border-bottom:1px solid var(--line-soft)}
+.rscore{margin:0; font-size:15px} .rscore strong{color:var(--green)}
+.rchain{margin:0; font-size:13px; color:var(--muted)}
+.btns{display:flex; flex-wrap:wrap; gap:9px; margin-top:12px}
+.btn{display:inline-block; border:1px solid var(--line); color:var(--gold); border-radius:9px;
+  padding:8px 14px; font-size:13.5px; background:rgba(226,210,67,.05)}
+.btn:hover{background:rgba(226,210,67,.11); text-decoration:none}
+.btn.dead{color:var(--muted-2); border-color:var(--line-soft); background:transparent}
+.nft{margin-top:14px}
+.nft img{max-width:220px; width:100%; height:auto; border-radius:11px; border:1px solid var(--line-soft)}
+.facts{display:grid; grid-template-columns:auto 1fr; gap:8px 16px; margin:0; font-size:13.5px}
+.facts dt{color:var(--muted-2); white-space:nowrap}
+.facts dd{margin:0; overflow-wrap:anywhere}
+.na{color:var(--muted-2)}
+.gap{border:1px solid var(--line-soft); background:rgba(255,255,255,.03); border-radius:11px;
+  padding:13px 15px; font-size:13.5px; color:var(--muted); margin-bottom:16px}
+footer{border-top:1px solid var(--line-soft); margin-top:26px; padding-block:24px 40px;
+  color:var(--muted-2); font-size:13px}
+footer p{margin:0 0 6px}
+@media (max-width:560px){
+  .wrap{padding-inline:14px}
+  .mfacts,.facts{grid-template-columns:1fr; gap:3px 0}
+  .mfacts dt,.facts dt{margin-top:7px}
+  .btn{flex:1 1 100%; text-align:center}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap hd">
+    <a class="back" href="../../index.html">&larr; Back to the verification archive</a>
+    <h1><span class="g">Golden Inu</span></h1>
+    <div><span class="stamp ok">KYC Approved</span><span class="stamp warn">Not audited</span></div>
+  </div>
+</header>
+
+<main class="wrap">
+  
+  
+  <section class="card">
+  <div class="ident">
+    <img src="https://raw.githubusercontent.com/Assure-DeFi/project-archive-assets/main/golden-inu/logo/127.png" alt="Golden Inu logo" width="56" height="56" loading="lazy">
+    <div>
+      <p class="nm">Golden Inu</p>
+      <p class="tk">$GOLDEN</p>
+    </div>
+  </div>
+  <p class="desc">Golden Inu Token is a revolutionary community-driven utility token that offers passive crypto rewards through a cutting-edge DAO-backed ecosystem.</p>
+  <div class="socrow"><a class="soc" href="https://goldeninutoken.org" rel="noopener nofollow">Website</a><a class="soc" href="https://twitter.com/GoldenInuToken" rel="noopener nofollow">X</a><a class="soc" href="https://t.me/goldenhorde" rel="noopener nofollow">Telegram</a><a class="soc" href="https://discord.gg/hCTcaynGgu" rel="noopener nofollow">Discord</a></div>
+</section>
+
+  <section class="card"><h2>Verification dates</h2><div class="dates"><div><p class="l">KYC date</p><p class="v">February 8th 2023</p></div></div></section>
+
+  <section class="card">
+    <h2>Contract</h2>
+    <div class="addr">
+  <p class="alabel">Contract Address:</p>
+  <p class="avalue"><code>0x7d4984490c4c68f8ead9dddca6d04c514ef77324</code><button class="copy" type="button" data-copy="0x7d4984490c4c68f8ead9dddca6d04c514ef77324">Copy</button></p>
+</div>
+    
+    <dl class="facts">
+      <dt>Blockchain:</dt><dd class="chips"><span class="chip">Not Available</span></dd>
+      
+    </dl>
+  </section>
+
+  <section class="card">
+    <h2>KYC Verification</h2>
+    
+    <div class="member">
+  <div class="mhead">
+    <p class="mname">Takeishi#0001</p>
+    <span class="mrole">Project Manager / CEO</span>
+  </div>
+  <dl class="mfacts">
+    <dt>Has control over:</dt>
+    <dd class="chips"><span class="chip">Treasury</span><span class="chip">Liquidity</span><span class="chip">Contract</span></dd>
+    <dt>Country Tier:</dt>
+    <dd><span class="tier">Tier 1</span></dd>
+    <dt>Verified socials:</dt>
+    <dd class="socs"><a class="soc" href="https://t.me/the_3tc" rel="noopener nofollow">Telegram</a><a class="soc" href="https://twitter.com/GoldenHordeOff" rel="noopener nofollow">X</a></dd>
+    <dt>Handles:</dt><dd class="handles"><span class="handle">Telegram @the_3tc</span><span class="handle">X @GoldenHordeoff</span><span class="handle">Discord Takeishi#0001</span></dd>
+  </dl>
+</div>
+<details class="tiers">
+  <summary>Assure DeFi&reg; country tier rankings are as follows</summary>
+  <p><strong>Tier 1:</strong> Strong law enforcement with resources and capabilities to effectively legislate &amp; pursue crypto-related cybercrime.</p>
+  <p><strong>Tier 2:</strong> Moderately effective law enforcement, lacking some resources &amp; capabilities to effectively pursue crypto-related cybercrime.</p>
+  <p><strong>Tier 3:</strong> Law enforcement &amp; legislative resources severely lacking. In most cases would prove ineffective at pursuing crypto-related cybercrime.</p>
+</details>
+    <div class="btns">
+      
+      <a class="btn" href="https://nft.assuredefi.com/?token=30" rel="noopener">Verification NFT</a>
+    </div>
+    <div class="nft"><img src="https://raw.githubusercontent.com/Assure-DeFi/project-nft-images/main/golden-inu/71.png" alt="Golden Inu verification NFT" loading="lazy"></div>
+  </section>
+
+  <section class="card">
+    <h2>Audit</h2>
+    <div class="notice">
+  <p class="t">No Assure DeFi&reg; Code Audit Detected</p>
+  <p>This project has <b>not been audited by Assure DeFi&reg;</b>. They may have completed an audit with another provider, but investors should exercise caution. We cannot guarantee the quality or standards of third-party audits.</p>
+</div>
+  </section>
+
+  <section class="card">
+    <h2>Verification record</h2>
+    <dl class="facts">
+      <dt>Verification status:</dt><dd>Approved</dd>
+      <dt>Audit status:</dt><dd>NotDetected</dd>
+      <dt>Verification version:</dt><dd>2</dd>
+      <dt>Country level:</dt><dd>1</dd>
+      <dt>Contract control:</dt><dd>Yes</dd>
+      <dt>Treasury control:</dt><dd>Yes</dd>
+      <dt>Liquidity control:</dt><dd>Yes</dd>
+      <dt>Contract renounced:</dt><dd>No</dd>
+      <dt>PROOF project:</dt><dd>No</dd>
+      <dt>Audit score (project record):</dt><dd><span class="na">N/A</span></dd>
+      <dt>Archive slug:</dt><dd>golden-inu</dd>
+      <dt>mediumLink:</dt><dd><a href="https://goldeninutoken.medium.com/" rel="noopener nofollow">https://goldeninutoken.medium.com/</a></dd>
+      <dt>NFT page:</dt><dd><a href="https://nft.assuredefi.com/?token=30" rel="noopener nofollow">https://nft.assuredefi.com/?token=30</a></dd>
+    </dl>
+  </section>
+</main>
+
+<footer class="wrap">
+  <p>Assure DeFi ceased operations in September 2026. This page is a static archive and is not maintained.</p>
+  <p><a href="../../index.html">Open the full verification archive</a></p>
+</footer>
+<script>
+(function(){
+  document.addEventListener("click", function(e){
+    var b = e.target.closest ? e.target.closest("button.copy") : null;
+    if(!b) return;
+    var v = b.getAttribute("data-copy") || "";
+    var done = function(){ var t=b.textContent; b.textContent="Copied"; setTimeout(function(){ b.textContent=t; },1600); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(v).then(done, function(){ b.textContent="Copy failed"; });
+    } else { b.textContent="Copy failed"; }
+  });
+})();
+</script>
+</body>
+</html>
