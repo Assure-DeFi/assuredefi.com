@@ -912,11 +912,23 @@ p{max-width:46ch;color:rgba(242,242,242,.62)}
   var ALIAS = ${JSON.stringify(detailBuild.aliases)};
   var HAS = {}; for (var i = 0; i < PAGES.length; i++) HAS[PAGES[i]] = 1;
   var m = /\\/projects?\\/([^\\/?#]+)\\/?$/.exec(location.pathname);
-  var to = "/";
+  // BASE is everything before /project(s)/..., so the redirect is correct both at
+  // the domain root and under a subpath (the GitHub Pages preview URL).
+  // At the domain the site root is "/"; on the GitHub Pages preview it is
+  // "/<repo>/". DECLARED, never derived from an arbitrary path: deriving it from
+  // an unmatched path (e.g. /nonsense/page) sends the redirect back to itself and
+  // the browser sits on a page that never loads.
+  var PREVIEW_ROOTS = ["/assuredefi.com/"];
+  var BASE = "/";
+  for (var b = 0; b < PREVIEW_ROOTS.length; b++) {
+    if (location.pathname.indexOf(PREVIEW_ROOTS[b]) === 0) { BASE = PREVIEW_ROOTS[b]; break; }
+  }
+  if (m && location.pathname.slice(0, m.index).indexOf(BASE) !== 0) BASE = "/";
+  var to = BASE;
   if (m) {
     var raw = decodeURIComponent(m[1]);
     var slug = HAS[raw] ? raw : (ALIAS[raw] || null);
-    to = slug ? "/projects/" + encodeURIComponent(slug) + "/" : "/#p=" + m[1];
+    to = slug ? BASE + "projects/" + encodeURIComponent(slug) + "/" : BASE + "#p=" + m[1];
   }
   location.replace(to);
 })();
@@ -925,7 +937,7 @@ p{max-width:46ch;color:rgba(242,242,242,.62)}
 <body>
 <div>
   <p>Assure DeFi has closed its doors. Redirecting to the verification archive&hellip;</p>
-  <p><a href="/">Open the archive</a></p>
+  <p><a href="./">Open the archive</a></p>
 </div>
 </body>
 </html>

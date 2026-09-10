@@ -449,7 +449,10 @@ function buildDetailPages(opts) {
 
     const siblings = versions.map((v, i) => ({
       version: v.version,
-      href: i === 0 ? `/projects/${slug}/` : `/projects/${slug}/v${v.version}/`,
+      // RELATIVE, never absolute: the archive is served both at the domain root
+      // and at a subpath (the GitHub Pages preview). An absolute /projects/... breaks
+      // every row link under the subpath, which reads as "the pages were never built".
+      href: i === 0 ? `projects/${slug}/` : `projects/${slug}/v${v.version}/`,
       label: v.version === '' ? 'Verification record' : `Version ${v.version}`,
     }));
 
