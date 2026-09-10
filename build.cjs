@@ -886,6 +886,37 @@ jump();
 </html>
 `;
 
+// --------------------------------------------------- nft.assuredefi.com map
+// The detail pages carry outbound links to `nft.assuredefi.com/?token=<n>`, the
+// old verification-NFT viewer. That host is dead (measured 2026-09-10: HTTP 404
+// for the exact token URLs these pages link), so the links are broken inside the
+// archive we just published. A Cloudflare rule sends that host to /nft/ here,
+// preserving the query, and this table resolves the token to the project page.
+//
+// DERIVED FROM THE SHIPPED BYTES, never from a hand list: each built page is read
+// back and its token links extracted, so a page that stops linking a token drops
+// out of the table by itself and a token can never point at a page that is gone.
+// A token appearing on TWO different projects is AMBIGUOUS and is deliberately
+// left out — it lands on the landing page, because guessing which project a
+// certificate belongs to is exactly the wrong redirect to invent.
+const nftTokenSlugs = new Map();
+for (const pg of detailBuild.pages) {
+  const html = fs.readFileSync(path.join(OUT, pg.rel), 'utf8');
+  const re = /nft\.assuredefi\.com\/\?token=(\d+)/g;
+  let mt;
+  while ((mt = re.exec(html))) {
+    if (!nftTokenSlugs.has(mt[1])) nftTokenSlugs.set(mt[1], new Set());
+    nftTokenSlugs.get(mt[1]).add(pg.slug);
+  }
+}
+const nftTokens = {};
+const nftTokensAmbiguous = {};
+for (const [tok, slugs] of nftTokenSlugs) {
+  const only = [...slugs];
+  if (only.length === 1 && detailBuild.index.has(only[0])) nftTokens[tok] = only[0];
+  else nftTokensAmbiguous[tok] = only;
+}
+
 const notFound = `<!doctype html>
 <html lang="en">
 <head>
@@ -911,7 +942,13 @@ p{max-width:46ch;color:rgba(242,242,242,.62)}
   // sanitised slug and the original maps to it here.
   var ALIAS = ${JSON.stringify(detailBuild.aliases)};
   var HAS = {}; for (var i = 0; i < PAGES.length; i++) HAS[PAGES[i]] = 1;
-  var m = /\\/projects?\\/([^\\/?#]+)\\/?$/.exec(location.pathname);
+  // Old verification-NFT viewer. Cloudflare sends nft.assuredefi.com/* here with
+  // the query preserved; this table is generated from the archive's own pages.
+  var TOKENS = ${JSON.stringify(nftTokens)};
+  // Trailing segments are tolerated: an old /project/<slug>/anything still knows
+  // which project it meant, and a version directory that no longer exists lands
+  // on the project page, which lists the versions that do.
+  var m = /\\/projects?\\/([^\\/?#]+)(?:\\/|$)/.exec(location.pathname);
   // BASE is everything before /project(s)/..., so the redirect is correct both at
   // the domain root and under a subpath (the GitHub Pages preview URL).
   // At the domain the site root is "/"; on the GitHub Pages preview it is
@@ -925,10 +962,29 @@ p{max-width:46ch;color:rgba(242,242,242,.62)}
   }
   if (m && location.pathname.slice(0, m.index).indexOf(BASE) !== 0) BASE = "/";
   var to = BASE;
-  if (m) {
-    var raw = decodeURIComponent(m[1]);
-    var slug = HAS[raw] ? raw : (ALIAS[raw] || null);
-    to = slug ? BASE + "projects/" + encodeURIComponent(slug) + "/" : BASE + "#p=" + m[1];
+  var nft = /\\/nft(?:\\/|$)/.exec(location.pathname.slice(BASE.length - 1));
+  if (nft) {
+    // An unknown or ambiguous token goes to the landing page. It is NOT guessed:
+    // a certificate sent to the wrong project is worse than no certificate.
+    var t = /[?&]token=(\\d+)/.exec(location.search);
+    var ts = t && TOKENS[t[1]];
+    to = ts ? BASE + "projects/" + encodeURIComponent(ts) + "/" : BASE;
+  } else if (m) {
+    var seg = m[1];
+    // Four lookups, widest last. decodeURIComponent is tried BOTH ways because a
+    // few old seoSlug values carry percent-escapes as LITERAL TEXT ("defi%c2%b2"),
+    // so the browser decodes a path the alias table stores undecoded.
+    var raw;
+    try { raw = decodeURIComponent(seg.replace(/\\+/g, " ")); } catch (e) { raw = seg; }
+    var slug =
+      (HAS[raw] && raw) ||
+      ALIAS[raw] ||
+      ALIAS[seg] ||
+      // Every built slug matches /^[a-z0-9._-]+\$/, so lowercasing and trimming can
+      // only ever reach the intended page or nothing at all.
+      (HAS[raw.trim().toLowerCase()] && raw.trim().toLowerCase()) ||
+      null;
+    to = slug ? BASE + "projects/" + encodeURIComponent(slug) + "/" : BASE + "#p=" + seg;
   }
   location.replace(to);
 })();
@@ -966,6 +1022,11 @@ for (const f of ['api-list-all.json', 'api-detail-all.json']) {
 }
 fs.copyFileSync(path.join(ROOT, 'assets-manifest.json'), path.join(OUT, 'data', 'assets-manifest.json'));
 
+stats.nftTokens = {
+  distinct: nftTokenSlugs.size,
+  resolved: Object.keys(nftTokens).length,
+  ambiguous: nftTokensAmbiguous,
+};
 stats.detailPages = detailBuild.stats;
 stats.detailListOnlyPages = detailBuild.listOnlyPages;
 stats.landingRowsWithoutArchivePage = rowsWithoutPage;
@@ -998,4 +1059,5 @@ console.log(`detail pages         ${detailBuild.stats.pagesBuilt} (${detailBuild
 console.log(`members rendered     ${detailBuild.stats.membersRendered}`);
 console.log(`audit reports        ${detailBuild.stats.reportsRendered}`);
 console.log(`landing rows w/o page ${rowsWithoutPage.length}`);
+console.log(`nft tokens           ${Object.keys(nftTokens).length}/${nftTokenSlugs.size} resolved (${Object.keys(nftTokensAmbiguous).length} ambiguous, sent to the landing page)`);
 console.log(xlsxNote);

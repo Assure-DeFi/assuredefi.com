@@ -23,7 +23,13 @@ p{max-width:46ch;color:rgba(242,242,242,.62)}
   // sanitised slug and the original maps to it here.
   var ALIAS = {"defi%c2%b2":"defi-c2-b2","Miraverse":"miraverse","OpMentis-AI":"opmentis-ai","smart-money ":"smart-money","Wrapped-platform":"wrapped-platform","kiss-&-kitties":"kiss-kitties","friends-with-benefits ":"friends-with-benefits","DogeShibaFlokiKabosuBoneElonMars69Inu":"dogeshibaflokikabosuboneelonmars69inu","Hashlite-chain":"hashlite-chain"};
   var HAS = {}; for (var i = 0; i < PAGES.length; i++) HAS[PAGES[i]] = 1;
-  var m = /\/projects?\/([^\/?#]+)\/?$/.exec(location.pathname);
+  // Old verification-NFT viewer. Cloudflare sends nft.assuredefi.com/* here with
+  // the query preserved; this table is generated from the archive's own pages.
+  var TOKENS = {"0":"univerz-dao","1":"aiminds","2":"blobdao","3":"ibots","4":"s-c-a-m","5":"fomo-labs","6":"vibezone-online","7":"gleek","8":"havoc","9":"0-knowledge-network","10":"soteria","11":"kenny","12":"aficionadao","13":"blockchain-bets","14":"self","15":"global-market-token","16":"enigma","18":"matrix","20":"thorfi","21":"kudoe","22":"archieneko","24":"fx1","26":"stablz","28":"goldbit-casino","29":"king-finance","30":"golden-inu","31":"kimberlite-token","35":"coinmerge","36":"blockchain-buddies","37":"tora","38":"ordinex","39":"metchain","40":"0xcasino","41":"waygate","42":"the-krypto-miners-club","43":"save-the-earth","44":"glory-finance","45":"dehedge-fund","46":"smartai-token","47":"flamer-life-ai","48":"our-grim-imperium","49":"artify","51":"spesbas","52":"shibanft-ai","54":"cold","55":"pi-protocol","56":"fatboy","57":"cool-monkeys","58":"meme-racers","59":"og-cats","61":"the-army-force","62":"fluus","63":"the-dare-ai","64":"shibarium-perpetuals","65":"agritech","66":"starwar","67":"turboswap","68":"the-zoo-of-cubs","69":"rising-giraffes","70":"rollerapp","71":"smart-chain-ventures","72":"cradle-of-sins","74":"padmondao","75":"bitstubs","76":"loudbeats","77":"beaneco-smartchain","78":"cash-cow","79":"dais","80":"owners-unity","82":"fusionx-finance","83":"crypad","85":"skynet-protocol","87":"seismic-cb","88":"dollarchain","90":"tradecurve","91":"burnswap","92":"solareum","93":"tyrion","94":"cbetworld","95":"zkswap","96":"oracle-ai","98":"wojak-original","99":"gray-market","101":"muskman-inu","103":"evolia-protocol","104":"stonedpepe","105":"blue-pepe","106":"decentify","107":"celeb-check","108":"habibi","111":"memecubator","112":"pepe-monsta","113":"liltay-token","114":"the-pepefather","115":"safu-pepe","116":"g-revolution-by-good-empire","117":"wixcare","118":"pepeaibaby","119":"aisatoshi","121":"lysin-finance","122":"pepe-planet","123":"pepe-killer","124":"chappygpt","125":"coorest","126":"king-bean","127":"scorpion-casino","128":"bitrock","132":"boom","133":"polfex","134":"bitfinder","135":"barbie","137":"bonsaiswap","138":"zenith-wallet","139":"milestone-millions","140":"miraverse","141":"qoodo-io","142":"lan-network","143":"defi-one","146":"wicked-bet","148":"kuku-world","149":"bams","150":"lynx-tech","151":"kei-finance","152":"mona-token","153":"superman-coin","154":"uniforge","156":"dollarsqueeze","158":"embark-finance","159":"crypto-hub","160":"friends-with-benefits","161":"meme-casino","162":"keysea","163":"datanomika","164":"good-marketplace","165":"liquid-protocol","166":"freedom-global-token-1-0","167":"blox-estate","168":"i-want-my-roi","169":"meme-heroes","170":"gigantix-wallet","172":"neboola","173":"monolitify","174":"he-man","176":"meme-fighter","177":"trustbet-on-chain","178":"metahorse-unity","179":"myth","180":"altcoinist","181":"scorefam","182":"lada","183":"swing","184":"onchaintoolkit","185":"buildai","186":"bitestate","187":"metadapp","188":"blastup","189":"modus","190":"maxi-barsik","191":"smart-money","192":"chainswap","193":"ratwifhat","194":"neurahub","195":"hoichi","196":"dawkoins","197":"chirpley","198":"stellaryai","199":"cygnus-network","200":"based-peaches","201":"blockbets-casino","202":"belly","203":"0xeth-dao","204":"platty-ai","205":"grok-cat","207":"renditus-ai","208":"dongo-ai","209":"solpaw","210":"emerald-company","211":"baked-beans","212":"innovia-trust","213":"pinlink","214":"aitax","215":"cifi","216":"maiv","217":"synthetic-ai","218":"hash-ai","220":"weniscoin","221":"safe-ai","222":"winbit-casino","223":"mage-labs","224":"autonnet","225":"infrax","226":"aeon-x","227":"metareset","228":"destra-network","229":"findlands","230":"munch-project","231":"microgpt","232":"free-ross","233":"mevx","234":"infinaeon","236":"devour","237":"eva-intelligence","238":"mars","239":"naoris-protocol","240":"edge","241":"createai","242":"coincreate","243":"tendr","244":"run3scape","246":"lens-ai","247":"compute-credits","251":"nimbi-wolfpack","252":"a-girl-and-a-doodle","253":"drvn-labo","256":"rouge-studio","257":"metabrawl","259":"6ense","260":"legal-x","261":"blind-faith","268":"pure-fun"};
+  // Trailing segments are tolerated: an old /project/<slug>/anything still knows
+  // which project it meant, and a version directory that no longer exists lands
+  // on the project page, which lists the versions that do.
+  var m = /\/projects?\/([^\/?#]+)(?:\/|$)/.exec(location.pathname);
   // BASE is everything before /project(s)/..., so the redirect is correct both at
   // the domain root and under a subpath (the GitHub Pages preview URL).
   // At the domain the site root is "/"; on the GitHub Pages preview it is
@@ -37,10 +43,29 @@ p{max-width:46ch;color:rgba(242,242,242,.62)}
   }
   if (m && location.pathname.slice(0, m.index).indexOf(BASE) !== 0) BASE = "/";
   var to = BASE;
-  if (m) {
-    var raw = decodeURIComponent(m[1]);
-    var slug = HAS[raw] ? raw : (ALIAS[raw] || null);
-    to = slug ? BASE + "projects/" + encodeURIComponent(slug) + "/" : BASE + "#p=" + m[1];
+  var nft = /\/nft(?:\/|$)/.exec(location.pathname.slice(BASE.length - 1));
+  if (nft) {
+    // An unknown or ambiguous token goes to the landing page. It is NOT guessed:
+    // a certificate sent to the wrong project is worse than no certificate.
+    var t = /[?&]token=(\d+)/.exec(location.search);
+    var ts = t && TOKENS[t[1]];
+    to = ts ? BASE + "projects/" + encodeURIComponent(ts) + "/" : BASE;
+  } else if (m) {
+    var seg = m[1];
+    // Four lookups, widest last. decodeURIComponent is tried BOTH ways because a
+    // few old seoSlug values carry percent-escapes as LITERAL TEXT ("defi%c2%b2"),
+    // so the browser decodes a path the alias table stores undecoded.
+    var raw;
+    try { raw = decodeURIComponent(seg.replace(/\+/g, " ")); } catch (e) { raw = seg; }
+    var slug =
+      (HAS[raw] && raw) ||
+      ALIAS[raw] ||
+      ALIAS[seg] ||
+      // Every built slug matches /^[a-z0-9._-]+$/, so lowercasing and trimming can
+      // only ever reach the intended page or nothing at all.
+      (HAS[raw.trim().toLowerCase()] && raw.trim().toLowerCase()) ||
+      null;
+    to = slug ? BASE + "projects/" + encodeURIComponent(slug) + "/" : BASE + "#p=" + seg;
   }
   location.replace(to);
 })();
