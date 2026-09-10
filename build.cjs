@@ -621,28 +621,25 @@ footer{
 
 <section>
   <h2>The permanent record</h2>
-  <p class="lede">Every document we issued is hosted in public GitHub repositories and stays reachable whether or not this page does.</p>
+  <p class="lede">Every document we issued is hosted in public GitHub repositories and stays reachable whether or not this page does. Open a repository to browse or download the files.</p>
   <div class="cards">
     <a class="card" href="https://github.com/Assure-DeFi/KYC-Certificates">
-      <div class="num">${stats.kycFiles}</div>
-      <div class="lbl">KYC Certificates</div>
+            <div class="lbl">KYC Certificates</div>
       <div class="meta">Assure-DeFi/KYC-Certificates</div>
     </a>
     <a class="card" href="https://github.com/Assure-DeFi/Audits">
-      <div class="num">${stats.auditFiles}</div>
-      <div class="lbl">Audit Reports</div>
+            <div class="lbl">Audit Reports</div>
       <div class="meta">Assure-DeFi/Audits</div>
     </a>
     <a class="card" href="https://github.com/Assure-DeFi/Audit-Certificates">
-      <div class="num">${stats.certFiles}</div>
-      <div class="lbl">Audit Certificates</div>
+            <div class="lbl">Audit Certificates</div>
       <div class="meta">Assure-DeFi/Audit-Certificates</div>
     </a>
   </div>
 </section>
 
 <section>
-  <h2>All ${stats.rows} verifications</h2>
+  <h2>KYC verifications</h2>
   <p class="lede">Search by project name, slug or contract address. A dash means no document of that kind was matched to that project. Nothing here is inferred: a link appears only where a file in the public repositories is confidently the one for that record.</p>
   <p class="lede">The source dataset carried no ticker, website or social fields for any record, so those columns are not shown.</p>
 
@@ -691,7 +688,7 @@ ${chainList.map((c) => `      <option value="${esc(c)}">${esc(c)}</option>`).joi
     <span class="t">Download the full dataset:</span>
     <a href="verifications.csv" download>verifications.csv</a>
     <a href="verifications.xlsx" download>verifications.xlsx</a>
-    <span class="n">Same ${stats.rows} rows, same columns, with the resolved certificate and report URLs.</span>
+    <span class="n">Same table, same columns, with the resolved certificate and report URLs.</span>
   </div>
 </section>
 
@@ -797,9 +794,7 @@ function apply(){
   view.sort(cmp);
   rendered = 0; tb.innerHTML = "";
   emptyEl.hidden = view.length>0;
-  countEl.textContent = view.length===ROWS.length
-    ? ROWS.length+" verifications"
-    : view.length+" of "+ROWS.length+" verifications";
+  countEl.textContent = "";
   grow();
   document.querySelectorAll("[data-arw]").forEach(function(el){
     el.textContent = el.getAttribute("data-arw")===sortKey ? (sortDir===1?"\\u25B2":"\\u25BC") : "";
