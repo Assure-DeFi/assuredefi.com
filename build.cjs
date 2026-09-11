@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 /**
- * build.cjs — regenerates site/ from inputs/ for the Assure DeFi closure archive.
+ * build.cjs — regenerates the Assure DeFi closure archive in place.
  *
- * Run:  node build.cjs
+ * Run from the repository root:  node build.cjs
+ *
+ * The site is served from the repository root, so the output directory IS the
+ * repository root. The only thing a rebuild deletes is projects/, and only
+ * through tools/output-guard.cjs.
  *
  * Inputs (inputs/):
  *   projects.json                  985 public verification records
@@ -10,12 +14,17 @@
  *   Audits.files.tsv               path<TAB>size for Assure-DeFi/Audits
  *   Audit-Certificates.files.tsv   path<TAB>size for Assure-DeFi/Audit-Certificates
  *   brand/Assure-brand.webp        logo, inlined as a base64 data URI
+ * Inputs (data/):
+ *   api-list-all.json, api-detail-all.json   the live API sweep behind projects/
+ *   assets-manifest.json                     archived attachments, by attachment id
  *
- * Outputs (site/):
+ * Outputs (repository root):
  *   index.html          one self-contained page (inline CSS + JS, no CDN, no fetch)
  *   404.html            /projects/<slug> and /project/<slug> -> /#p=<slug>
+ *   projects/           one page per verification
  *   verifications.csv   slimmed columns + resolved certificate/report URLs
  *   verifications.xlsx  same columns (written by tools/make_xlsx.py via openpyxl)
+ * Build scratch (.build/, gitignored): stats, suffix-match audit, xlsx hand-off.
  *
  * Link resolution never fabricates. A project with no confident file match gets
  * no link and the cell renders an em dash.
@@ -24,9 +33,12 @@
 const fs = require('fs');
 const path = require('path');
 
+const { assertOutputRoot } = require('./tools/output-guard.cjs');
+
 const ROOT = __dirname;
 const IN = path.join(ROOT, 'inputs');
-const OUT = path.join(ROOT, 'site');
+const OUT = assertOutputRoot(ROOT);
+const BUILD = path.join(ROOT, '.build');
 
 const REPOS = {
   kyc: 'KYC-Certificates',
@@ -436,7 +448,7 @@ const LOGO_URI = `data:image/webp;base64,${logoB64}`;
 
 // ------------------------------------------------- per-project detail pages
 //
-// One static page per verification under site/projects/. Built before the
+// One static page per verification under projects/. Built before the
 // landing page, because the landing table links a project row to its page only
 // where a page actually exists — never to a guessed path.
 const { buildDetailPages } = require('./tools/detail-pages.cjs');
@@ -917,6 +929,25 @@ for (const [tok, slugs] of nftTokenSlugs) {
   else nftTokensAmbiguous[tok] = only;
 }
 
+// ------------------------------------------------ DECLARED manual slug aliases
+// Old URLs no dataset can derive, each added by a human with the date and the
+// reason. Used ONLY by the 404.html redirect map, never by the landing table.
+// The build refuses an entry whose target has no page, or whose old slug is
+// itself a live page (it would be unreachable, and silently so).
+const MANUAL_SLUG_ALIASES = Object.freeze({
+  // 2026-09-11: an old Webflow page served /projects/plutochain; the archive
+  // page is /projects/pluto-chain/.
+  plutochain: 'pluto-chain',
+});
+for (const [from, to] of Object.entries(MANUAL_SLUG_ALIASES)) {
+  if (!detailBuild.index.has(to)) throw new Error(`manual alias ${from} -> ${to}: no archive page for ${to}`);
+  if (detailBuild.index.has(from)) throw new Error(`manual alias ${from}: ${from} is already a live page`);
+  if (detailBuild.aliases[from] && detailBuild.aliases[from] !== to) {
+    throw new Error(`manual alias ${from} -> ${to} contradicts derived alias -> ${detailBuild.aliases[from]}`);
+  }
+}
+const redirectAliases = { ...detailBuild.aliases, ...MANUAL_SLUG_ALIASES };
+
 const notFound = `<!doctype html>
 <html lang="en">
 <head>
@@ -939,8 +970,9 @@ p{max-width:46ch;color:rgba(242,242,242,.62)}
   var PAGES = ${JSON.stringify([...detailBuild.index.keys()])};
   // A few old seoSlug values are not usable as a path segment (a trailing
   // space, an uppercase form, an ampersand), so their page lives at a
-  // sanitised slug and the original maps to it here.
-  var ALIAS = ${JSON.stringify(detailBuild.aliases)};
+  // sanitised slug and the original maps to it here, followed by the declared
+  // manual aliases (MANUAL_SLUG_ALIASES in build.cjs).
+  var ALIAS = ${JSON.stringify(redirectAliases)};
   var HAS = {}; for (var i = 0; i < PAGES.length; i++) HAS[PAGES[i]] = 1;
   // Old verification-NFT viewer. Cloudflare sends nft.assuredefi.com/* here with
   // the query preserved; this table is generated from the archive's own pages.
@@ -1001,7 +1033,7 @@ p{max-width:46ch;color:rgba(242,242,242,.62)}
 
 // ------------------------------------------------------------------- write
 
-fs.mkdirSync(OUT, { recursive: true });
+fs.mkdirSync(BUILD, { recursive: true });
 fs.writeFileSync(path.join(OUT, 'index.html'), html);
 fs.writeFileSync(path.join(OUT, '404.html'), notFound);
 fs.writeFileSync(
@@ -1009,18 +1041,10 @@ fs.writeFileSync(
   [CSV_COLUMNS.join(','), ...rows.map((r) => rowValues(r).map(csvCell).join(','))].join('\n') + '\n'
 );
 // Handed to tools/make_xlsx.py, which is the only step that needs Python.
-fs.writeFileSync(
-  path.join(ROOT, '.xlsx-input.json'),
-  JSON.stringify({ columns: CSV_COLUMNS, rows: rows.map(rowValues) })
-);
-// Raw API payloads travel with the site, so a field a template misses is still
-// recoverable from the archive itself rather than only from this scratch build.
-const SWEEP_DIR = path.resolve(ROOT, '..', 'projects-sweep');
-fs.mkdirSync(path.join(OUT, 'data'), { recursive: true });
-for (const f of ['api-list-all.json', 'api-detail-all.json']) {
-  fs.copyFileSync(path.join(SWEEP_DIR, f), path.join(OUT, 'data', f));
-}
-fs.copyFileSync(path.join(ROOT, 'assets-manifest.json'), path.join(OUT, 'data', 'assets-manifest.json'));
+const XLSX_INPUT = path.join(BUILD, 'xlsx-input.json');
+fs.writeFileSync(XLSX_INPUT, JSON.stringify({ columns: CSV_COLUMNS, rows: rows.map(rowValues) }));
+// The raw API payloads in data/ are inputs here and ship as they are, so a field
+// a template misses is still recoverable from the archive itself.
 
 stats.nftTokens = {
   distinct: nftTokenSlugs.size,
@@ -1030,16 +1054,18 @@ stats.nftTokens = {
 stats.detailPages = detailBuild.stats;
 stats.detailListOnlyPages = detailBuild.listOnlyPages;
 stats.landingRowsWithoutArchivePage = rowsWithoutPage;
-fs.writeFileSync(path.join(ROOT, '.stats.json'), JSON.stringify(stats, null, 2));
-fs.writeFileSync(path.join(ROOT, '.suffix-matches.json'), JSON.stringify(suffixMatches, null, 2));
+stats.manualSlugAliases = MANUAL_SLUG_ALIASES;
+fs.writeFileSync(path.join(BUILD, 'stats.json'), JSON.stringify(stats, null, 2));
+fs.writeFileSync(path.join(BUILD, 'suffix-matches.json'), JSON.stringify(suffixMatches, null, 2));
 
-// verifications.xlsx — neither `xlsx` nor `exceljs` exists under
-// brainverse/node_modules, so the sheet is written by openpyxl (3.1.5), which is
-// already installed. A missing openpyxl is reported, never silently skipped.
+// verifications.xlsx — written by openpyxl (3.1.5), so the build needs no npm
+// dependency at all. A missing openpyxl is reported, never silently skipped.
 let xlsxNote = '';
 try {
   const { execFileSync } = require('child_process');
-  xlsxNote = execFileSync('python3', [path.join(ROOT, 'tools', 'make_xlsx.py')], {
+  xlsxNote = execFileSync('python3', [
+    path.join(ROOT, 'tools', 'make_xlsx.py'), XLSX_INPUT, path.join(OUT, 'verifications.xlsx'),
+  ], {
     encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
   }).trim();
 } catch (e) {

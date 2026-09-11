@@ -15,8 +15,11 @@
 const fs = require('fs');
 const path = require('path');
 
+const { removeGenerated } = require('./output-guard.cjs');
+
 const ROOT = path.resolve(__dirname, '..');
-const SWEEP = path.resolve(ROOT, '..', 'projects-sweep');
+// The raw API sweep and the asset manifest live in the repository's own data/.
+const DATA = path.join(ROOT, 'data');
 
 const ASSET_REPOS = {
   archive: 'project-archive-assets',
@@ -345,7 +348,7 @@ const PAGE_JS = `
 
 /**
  * @param {object} opts
- * @param {string} opts.outDir            site/ directory
+ * @param {string} opts.outDir            the repository root (the site is served from it)
  * @param {string} opts.logoDataUri       inlined Assure DeFi logo
  * @param {string} opts.closureStatement
  * @returns {{pages:Array, index:Map, stats:object}}
@@ -354,15 +357,16 @@ function buildDetailPages(opts) {
   const outDir = opts.outDir;
   // Regenerate from scratch: a slug that stops existing must not leave a stale
   // page behind, and a renamed slug must not leave the old directory served.
-  fs.rmSync(path.join(outDir, 'projects'), { recursive: true, force: true });
-  const listAll = JSON.parse(fs.readFileSync(path.join(SWEEP, 'api-list-all.json'), 'utf8'));
-  const detailAll = JSON.parse(fs.readFileSync(path.join(SWEEP, 'api-detail-all.json'), 'utf8'));
+  // The guard refuses anything but projects/ directly under the repository root.
+  removeGenerated(outDir, 'projects');
+  const listAll = JSON.parse(fs.readFileSync(path.join(DATA, 'api-list-all.json'), 'utf8'));
+  const detailAll = JSON.parse(fs.readFileSync(path.join(DATA, 'api-detail-all.json'), 'utf8'));
 
   // Downloaded-asset lookup, keyed by attachment id. A file that failed to
   // download is simply absent, and the template says "unavailable" rather than
   // linking a path that will 404.
   const assetByAttId = new Map();
-  const manifestPath = path.join(ROOT, 'assets-manifest.json');
+  const manifestPath = path.join(DATA, 'assets-manifest.json');
   let manifest = null;
   if (fs.existsSync(manifestPath)) {
     manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));

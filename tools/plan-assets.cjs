@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 /* Build the download plan: one row per attachment we must copy locally.
  * Airtable URLs expire within hours, so this runs first and independently
- * of templating. Output: assets-plan.json */
+ * of templating. Output: .build/assets-plan.json */
 'use strict';
 const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
-const SWEEP = path.resolve(ROOT, '..', 'projects-sweep');
+// The raw API sweep lives in the repository's own data/.
+const DATA = path.join(ROOT, 'data');
 
-const detail = JSON.parse(fs.readFileSync(path.join(SWEEP, 'api-detail-all.json'), 'utf8'));
+const detail = JSON.parse(fs.readFileSync(path.join(DATA, 'api-detail-all.json'), 'utf8'));
 
 // Keep the filename readable but make it safe as a single path segment.
 // Never collapse to a hash: the filename is evidence of what the file is.
@@ -78,7 +79,9 @@ for (const key of Object.keys(detail)) {
   }
 }
 
-const out = path.join(ROOT, 'assets-plan.json');
+// Build scratch (.build/ is gitignored), so a plan is never published.
+const out = path.join(ROOT, '.build', 'assets-plan.json');
+fs.mkdirSync(path.dirname(out), { recursive: true });
 fs.writeFileSync(out, JSON.stringify(rows, null, 1));
 
 const byKind = {};

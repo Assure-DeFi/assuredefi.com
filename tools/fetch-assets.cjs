@@ -9,9 +9,12 @@ const crypto = require('crypto');
 const { pipeline } = require('stream/promises');
 
 const ROOT = path.resolve(__dirname, '..');
-const ASSETS = path.join(ROOT, 'assets');
-const PLAN = path.join(ROOT, 'assets-plan.json');
-const MANIFEST = path.join(ROOT, 'assets-manifest.json');
+// Downloads land in gitignored build scratch: the files are published in their
+// own repositories (project-archive-assets, project-nft-images), never here.
+// The manifest they produce is data/assets-manifest.json, which build.cjs reads.
+const ASSETS = path.join(ROOT, '.build', 'assets');
+const PLAN = path.join(ROOT, '.build', 'assets-plan.json');
+const MANIFEST = path.join(ROOT, 'data', 'assets-manifest.json');
 
 const CONCURRENCY = 6;
 const TIMEOUT_MS = 120000;   // a 30MB PDF over a slow hop needs headroom
